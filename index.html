@@ -82,7 +82,7 @@ a{color:inherit;text-decoration:none}
 .sheet th:first-child,.sheet td:first-child{text-align:left}
 .sheet th{font-weight:700;padding:10px 12px}
 .sheet .cur{background:var(--hi)}
-.sheet .p{width:23%}
+.sheet td:first-child,.sheet th:first-child{min-width:150px}
 .sheet .desc{display:block;font-size:12px;color:var(--muted);line-height:1.3}
 .sheet td.pick{cursor:pointer;color:var(--muted)}
 .sheet td.pick:hover{background:var(--accent);color:#fff}
@@ -94,9 +94,14 @@ a{color:inherit;text-decoration:none}
 .sheet tr.bonus td{background:#ebeae5;font-size:13px}
 .sheet tr.total td{background:#ebeae5;font-weight:700;font-size:15px}
 .sheet td.ai-pick{background:var(--accent);color:#fff}
+.room{padding:18px}
+.room h3{margin:0 0 10px;font-size:15px}
+.members{list-style:none;margin:0;padding:0}
+.members li{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--row)}
+.room .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .overlay{position:absolute;inset:0;background:rgba(244,243,239,.95);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;text-align:center;padding:130px 20px 20px}
 .overlay h2{margin:0;font-size:34px;font-weight:900;letter-spacing:-.02em}
-.overlay .score{font-size:17px}
+.overlay .score{font-size:17px;line-height:1.7}
 .overlay .row{display:flex;gap:8px;margin-top:6px}
 .friends .add{display:flex;gap:6px}
 .friends .add input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff}
@@ -204,7 +209,7 @@ a{color:inherit;text-decoration:none}
           <div class="label">모드</div>
           <div class="seg" id="modeSeg">
             <button data-v="ai">AI 대전</button>
-            <button data-v="local">2인 대전</button>
+            <button data-v="local">같은 기기</button>
             <button data-v="online">온라인 대전</button>
           </div>
         </div>
@@ -216,9 +221,18 @@ a{color:inherit;text-decoration:none}
             <button data-v="hard">어려움</button>
           </div>
         </div>
-        <div class="field" id="onlineField">
-          <button class="btn primary" id="btnQuick">빠른 대전</button>
-          <p class="hint">친구와 하려면 친구 목록에서 대전 신청을 눌러 주세요.</p>
+        <div class="field" id="countField">
+          <div class="label">인원</div>
+          <div class="seg" id="countSeg">
+            <button data-v="2">2명</button>
+            <button data-v="3">3명</button>
+            <button data-v="4">4명</button>
+          </div>
+        </div>
+        <div class="field stack" id="onlineField" style="margin-top:-8px">
+          <button class="btn primary" id="btnRoom">방 만들기</button>
+          <button class="btn" id="btnQuick">빠른 대전 (2인)</button>
+          <p class="hint">방을 만든 뒤 친구 목록에서 초대를 누르면 4명까지 함께 할 수 있습니다.</p>
           <p class="hint" id="onlineHint"></p>
         </div>
         <button class="btn primary" id="btnStart">게임 시작</button>
@@ -226,12 +240,15 @@ a{color:inherit;text-decoration:none}
       </div>
 
       <div class="panel board" id="board">
+        <div id="roomView" class="room" style="display:none"></div>
+        <div id="gameView">
         <div class="board-head"><span id="roundInfo"></span><span id="turnInfo"></span></div>
         <div class="dice-area">
           <div class="dice" id="dice"></div>
           <button class="btn primary" id="btnRoll">굴리기</button>
         </div>
         <table class="sheet" id="sheet"></table>
+        </div>
         <div class="overlay" id="gameOver" style="display:none"></div>
       </div>
 
@@ -271,7 +288,7 @@ a{color:inherit;text-decoration:none}
   <div class="page" id="pg-rules">
     <div class="wrap rules">
       <h2>1. 게임 목표</h2>
-      <p>주사위 5개를 굴려 12개의 점수 칸을 모두 채우고, 총점이 더 높은 쪽이 승리합니다.</p>
+      <p>주사위 5개를 굴려 12개의 점수 칸을 모두 채우고, 총점이 가장 높은 사람이 승리합니다. 2명부터 4명까지 함께 할 수 있습니다.</p>
       <h2>2. 턴 진행</h2>
       <p>한 턴에 주사위를 최대 3번 굴릴 수 있습니다. 굴린 뒤 원하는 주사위를 누르면 고정되어 다음 굴림에서 바뀌지 않으며, 다시 누르면 고정이 풀립니다.</p>
       <p>굴림이 남아 있어도 언제든 점수 칸을 선택해 턴을 마칠 수 있습니다. 점수 칸은 한 번 채우면 바꿀 수 없고, 조건에 맞지 않는 칸을 고르면 0점으로 채워집니다.</p>
@@ -280,9 +297,9 @@ a{color:inherit;text-decoration:none}
       <h2>4. 보너스</h2>
       <p>1부터 6까지 여섯 칸의 합이 63점 이상이면 보너스 35점을 받습니다. 각 눈이 3개씩 나오면 정확히 63점이 됩니다.</p>
       <h2>5. 게임 종료</h2>
-      <p>두 사람이 12라운드씩 마쳐 모든 칸이 채워지면 총점을 비교합니다. 총점이 같으면 무승부입니다.</p>
+      <p>모든 사람이 12라운드씩 마쳐 칸이 다 채워지면 총점으로 순위를 매깁니다. 1위 점수가 같으면 무승부입니다.</p>
       <h2>6. 대전 방식</h2>
-      <p>AI 대전은 쉬움, 보통, 어려움 중 난이도를 골라 혼자 연습할 수 있습니다. 2인 대전은 한 기기에서 번갈아 가며 플레이합니다. 온라인 대전은 빠른 대전으로 접속 중인 다른 플레이어와 바로 붙거나, 친구 목록에서 친구에게 대전을 신청할 수 있습니다.</p>
+      <p>AI 대전은 쉬움, 보통, 어려움 중 난이도를 골라 AI 1~3명과 겨룰 수 있습니다. 같은 기기 대전은 한 기기에서 2~4명이 번갈아 가며 플레이합니다. 온라인 대전은 방을 만들어 친구를 초대하면 4명까지 함께 할 수 있고, 빠른 대전으로 접속 중인 다른 플레이어와 1대1로 바로 붙을 수도 있습니다.</p>
     </div>
   </div>
 </div>
@@ -413,12 +430,13 @@ const SUPABASE_URL="https://beapfyvqplowqcdjlryo.supabase.co";
 const SUPABASE_KEY="sb_publishable_I7K0M8cSa1g04SVTTJUG3Q_pKvo0mMe";
 const CLOUD=!!(SUPABASE_URL&&SUPABASE_KEY&&window.supabase);
 const sb=CLOUD?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+const ROOM_MAX=4;
 
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const LEVELS={easy:'쉬움',normal:'보통',hard:'어려움'};
-const MODES={ai:'AI 대전',local:'2인 대전',online:'온라인 대전'};
+const MODES={ai:'AI 대전',local:'같은 기기 대전',online:'온라인 대전'};
 const RESULTS={win:'승',loss:'패',draw:'무'};
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}},del(k){try{localStorage.removeItem(k);}catch(e){}}};
@@ -426,8 +444,8 @@ function fmtDate(iso){const d=new Date(iso);const p=n=>String(n).padStart(2,'0')
 
 let me=null,G=null,online=null,aiBusy=false;
 let friends=[],requests=[],sentRequests=[],onlineIds=new Set(),myGames=[];
-let presenceCh=null,matchCh=null,friendCh=null;
-let settings={mode:'ai',level:'normal'};
+let presenceCh=null,inviteCh=null,friendCh=null,roomCh=null;
+let settings={mode:'ai',level:'normal',count:2};
 let recFilter='all',replayRec=null,replayIdx=0;
 
 /* ===== 화면 전환 ===== */
@@ -525,18 +543,32 @@ function openAuth(kind){
   show('s-auth');$('#authNick').focus();
 }
 
-/* ===== 게임 상태 ===== */
-function makeState(mode,players,level){
-  return {mode,level:level||null,players:players.map(p=>({id:p.id||null,name:p.name,kind:p.kind,sheet:emptySheet()})),
-    cur:0,round:1,dice:[0,0,0,0,0],held:[false,false,false,false,false],rolls:3,log:[],turnRolls:[],turnHeld:[],finished:false,seq:0};
+/* ===== 게임 상태 (2~4인) ===== */
+function makeState(mode,players,level,gameNo){
+  return {mode,level:level||null,gameNo:gameNo||1,players:players.map(p=>({id:p.id||null,name:p.name,kind:p.kind,left:false,sheet:emptySheet()})),
+    cur:0,dice:[0,0,0,0,0],held:[false,false,false,false,false],rolls:3,log:[],turnRolls:[],turnHeld:[],finished:false,seq:0};
 }
-function myIdx(){return G&&G.mode==='online'&&online?online.myIdx:0;}
+function sheetFull(sheet){return CATS.every(c=>sheet[c.id]!=null);}
+function filledCount(sheet){return CATS.filter(c=>sheet[c.id]!=null).length;}
+function myIdx(){
+  if(!G)return 0;
+  if(G.mode==='online'){const i=G.players.findIndex(p=>p.id===me.id);return i<0?0:i;}
+  return 0;
+}
 function canAct(){
   if(!G||G.finished)return false;
-  if(G.players[G.cur].kind==='ai')return false;
-  if(G.mode==='online')return online&&G.cur===online.myIdx;
+  const p=G.players[G.cur];
+  if(p.kind==='ai'||p.left)return false;
+  if(G.mode==='online')return !!online&&online.status==='active'&&G.cur===myIdx();
   return true;
 }
+/* 다음 차례로 넘김. 남은 차례가 없으면 false */
+function advance(){
+  const n=G.players.length;let i=G.cur;
+  for(let k=0;k<n;k++){i=(i+1)%n;const p=G.players[i];if(!p.left&&!sheetFull(p.sheet)){G.cur=i;return true;}}
+  return false;
+}
+function resetTurn(){G.rolls=3;G.held=[false,false,false,false,false];G.turnRolls=[];G.turnHeld=[];}
 function doRoll(){
   if(G.rolls<=0)return;
   G.turnHeld.push(G.held.slice());
@@ -548,27 +580,29 @@ function doToggle(i){G.held[i]=!G.held[i];G.seq++;render();sync();}
 function doChoose(catId){
   const p=G.players[G.cur];const s=scoreCat(catId,G.dice);p.sheet[catId]=s;
   G.log.push({p:G.cur,rolls:G.turnRolls,held:G.turnHeld,dice:G.dice.slice(),cat:catId,score:s});
-  G.cur=(G.cur+1)%2;if(G.cur===0)G.round++;
-  G.rolls=3;G.held=[false,false,false,false,false];G.turnRolls=[];G.turnHeld=[];G.seq++;
-  if(G.round>12){G.finished=true;}
+  resetTurn();G.seq++;
+  if(!advance())G.finished=true;
   render();sync();
   if(G.finished)saveResult();else maybeAI();
 }
 function startGame(){
   if(settings.mode==='online')return;
   const begin=()=>{
-    const p0={id:me.id,name:me.nick,kind:'human'};
-    const p1=settings.mode==='ai'?{id:null,name:'AI ('+LEVELS[settings.level]+')',kind:'ai'}:{id:null,name:'플레이어 2',kind:'human'};
-    G=makeState(settings.mode,[p0,p1],settings.mode==='ai'?settings.level:null);
+    const players=[{id:me.id,name:me.nick,kind:'human'}];
+    for(let i=2;i<=settings.count;i++){
+      if(settings.mode==='ai')players.push({id:null,name:(settings.count>2?`AI ${i-1}`:'AI')+` (${LEVELS[settings.level]})`,kind:'ai'});
+      else players.push({id:null,name:`플레이어 ${i}`,kind:'human'});
+    }
+    G=makeState(settings.mode,players,settings.mode==='ai'?settings.level:null);
     render();maybeAI();
   };
   if(G&&!G.finished)showModal('진행 중인 게임을 그만두고 새로 시작할까요?',[{label:'새로 시작',fn:begin},{label:'취소'}]);
   else begin();
 }
 function quitGame(){
-  if(!G)return;
-  const stop=async()=>{if(G&&G.mode==='online')await leaveOnline();G=null;render();};
-  if(G.finished)stop();
+  if(!G&&!online)return;
+  const stop=async()=>{if(online)await leaveOnline();G=null;render();};
+  if(!G||G.finished)stop();
   else showModal('진행 중인 게임을 그만둘까요?',[{label:'그만두기',fn:stop},{label:'취소'}]);
 }
 async function maybeAI(){
@@ -591,13 +625,25 @@ async function maybeAI(){
     }
   }finally{aiBusy=false;}
 }
+/* 순위: 나간 사람은 제외 */
+function standings(){
+  const scores=G.players.map(p=>totalOf(p.sheet));
+  const idx=G.players.map((p,i)=>i).filter(i=>!G.players[i].left);
+  idx.sort((a,b)=>scores[b]-scores[a]);
+  return idx.map(i=>({i,name:G.players[i].name,score:scores[i],rank:1+idx.filter(j=>scores[j]>scores[i]).length}));
+}
 async function saveResult(forced){
   if(!G||G.saved)return;G.saved=true;
-  const my=myIdx(),op=1-my;
-  const ms=totalOf(G.players[my].sheet),os=totalOf(G.players[op].sheet);
-  const result=forced||(ms>os?'win':ms<os?'loss':'draw');
-  const rec={mode:G.mode,level:G.level,opponent:G.players[op].name,opponent_id:G.players[op].id||null,my_score:ms,opp_score:os,result,
-    log:{players:G.players.map(p=>({name:p.name,kind:p.kind})),my,turns:G.log},created_at:new Date().toISOString()};
+  const my=myIdx();
+  if(G.players[my].left)return;
+  const scores=G.players.map(p=>totalOf(p.sheet));
+  const st=standings();const mine=st.find(s=>s.i===my)||{rank:1};
+  const rivals=st.filter(s=>s.i!==my);
+  const best=rivals.length?rivals[0].score:0;
+  const result=forced||(rivals.length===0?'win':scores[my]>best?'win':scores[my]===best?'draw':'loss');
+  const others=G.players.map((p,i)=>({id:p.id,name:p.name,score:scores[i],left:!!p.left,i})).filter(o=>o.i!==my).map(({i,...o})=>o);
+  const rec={mode:G.mode,level:G.level,opponent:others.map(o=>o.name).join(', '),opponent_id:others.length===1?others[0].id:null,my_score:scores[my],opp_score:best,result,
+    log:{players:G.players.map(p=>({name:p.name,kind:p.kind,left:!!p.left})),my,turns:G.log,others,rank:mine.rank,n:st.length},created_at:new Date().toISOString()};
   const saved=await storeGame(rec);
   myGames.unshift(saved||rec);
   renderFriends();
@@ -607,27 +653,35 @@ async function saveResult(forced){
 function renderSettings(){
   $$('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===settings.mode));
   $$('#levelSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===settings.level));
+  $$('#countSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.v===settings.count));
   $('#levelField').style.display=settings.mode==='ai'?'':'none';
+  $('#countField').style.display=settings.mode==='online'?'none':'';
   $('#onlineField').style.display=settings.mode==='online'?'':'none';
   $('#btnStart').style.display=settings.mode==='online'?'none':'';
   const canOnline=CLOUD&&me&&!me.guest;
   $('#btnQuick').disabled=!canOnline||!!online;
+  $('#btnRoom').disabled=!canOnline||!!online;
   $('#onlineHint').textContent=!CLOUD?'온라인 대전은 Supabase 설정 후 사용할 수 있습니다.':(me&&me.guest?'온라인 대전은 로그인 후 사용할 수 있습니다.':'');
-  $('#btnQuit').style.display=G?'':'none';
-  $('#btnQuit').textContent=G&&G.finished?'판 닫기':'그만두기';
+  const q=$('#btnQuit');
+  q.style.display=(G||online)?'':'none';
+  q.textContent=online&&online.status!=='active'?'나가기':(G&&G.finished?'판 닫기':'그만두기');
 }
 function render(rolled){
   renderSettings();
+  const inRoom=online&&(online.status==='room'||online.status==='waiting');
+  $('#roomView').style.display=inRoom?'':'none';
+  $('#gameView').style.display=inRoom?'none':'';
+  if(inRoom){renderRoom();renderOver();return;}
   renderHead();renderDice(rolled);renderSheet();renderOver();
 }
 function renderHead(){
   const r=$('#roundInfo'),t=$('#turnInfo');
   if(!G){r.textContent='';t.textContent='';return;}
-  r.textContent=G.finished?'게임 종료':`라운드 ${Math.min(G.round,12)} / 12`;
-  if(G.finished){t.textContent='';return;}
   const p=G.players[G.cur];
+  r.textContent=G.finished?'게임 종료':`라운드 ${Math.min(filledCount(p.sheet)+1,12)} / 12`;
+  if(G.finished){t.textContent='';return;}
   if(p.kind==='ai')t.textContent='AI가 생각하는 중';
-  else if(G.mode==='online')t.textContent=G.cur===online.myIdx?'내 차례':'상대의 차례';
+  else if(G.mode==='online')t.textContent=G.cur===myIdx()?'내 차례':`${p.name} 님의 차례`;
   else t.textContent=`${p.name} 님의 차례`;
 }
 function renderDice(rolled){
@@ -645,6 +699,7 @@ function renderDice(rolled){
   b.textContent=G?`굴리기 (${G.rolls}회 남음)`:'굴리기';
   b.disabled=!act||G.rolls===0;
 }
+function colW(n){return n<=2?'23%':n===3?'18%':'15%';}
 function cellHtml(pi,c){
   const sheet=G.players[pi].sheet,v=sheet[c.id];
   const cur=G.cur===pi&&!G.finished?' cur':'';
@@ -658,19 +713,20 @@ function cellHtml(pi,c){
 function renderSheet(){
   const t=$('#sheet');
   if(!G){
-    t.innerHTML=`<tr><th></th><th class="p"></th><th class="p"></th></tr>`+
+    t.innerHTML=`<tr><th></th><th class="p" style="width:23%"></th><th class="p" style="width:23%"></th></tr>`+
       UPPER.map(c=>`<tr><td>${c.name}<span class="desc">${c.desc}</span></td><td class="p"></td><td class="p"></td></tr>`).join('')+
       `<tr class="bonus"><td>보너스<span class="desc">63점 이상이면 +35</span></td><td class="p"></td><td class="p"></td></tr>`+
       LOWER.map(c=>`<tr><td>${c.name}<span class="desc">${c.desc}</span></td><td class="p"></td><td class="p"></td></tr>`).join('')+
       `<tr class="total"><td>총점</td><td class="p"></td><td class="p"></td></tr>`;
     return;
   }
+  const n=G.players.length,w=colW(n),ids=G.players.map((p,i)=>i);
   const hc=i=>(G.cur===i&&!G.finished)?' cur':'';
-  let h=`<tr><th></th><th class="p${hc(0)}">${esc(G.players[0].name)}</th><th class="p${hc(1)}">${esc(G.players[1].name)}</th></tr>`;
-  for(const c of UPPER)h+=`<tr><td>${c.name}<span class="desc">${c.desc}</span></td>${cellHtml(0,c)}${cellHtml(1,c)}</tr>`;
-  h+=`<tr class="bonus"><td>보너스<span class="desc">63점 이상이면 +35</span></td>`+[0,1].map(i=>{const u=upperSum(G.players[i].sheet);return `<td class="p${hc(i)}">${u} / 63${u>=63?' (+35)':''}</td>`;}).join('')+`</tr>`;
-  for(const c of LOWER)h+=`<tr><td>${c.name}<span class="desc">${c.desc}</span></td>${cellHtml(0,c)}${cellHtml(1,c)}</tr>`;
-  h+=`<tr class="total"><td>총점</td>`+[0,1].map(i=>`<td class="p${hc(i)}">${totalOf(G.players[i].sheet)}</td>`).join('')+`</tr>`;
+  let h=`<tr><th></th>`+ids.map(i=>`<th class="p${hc(i)}" style="width:${w}">${esc(G.players[i].name)}${G.players[i].left?'<span class="desc">나감</span>':''}</th>`).join('')+`</tr>`;
+  for(const c of UPPER)h+=`<tr><td>${c.name}<span class="desc">${c.desc}</span></td>${ids.map(i=>cellHtml(i,c)).join('')}</tr>`;
+  h+=`<tr class="bonus"><td>보너스<span class="desc">63점 이상이면 +35</span></td>`+ids.map(i=>{const u=upperSum(G.players[i].sheet);return `<td class="p${hc(i)}">${u} / 63${u>=63?' (+35)':''}</td>`;}).join('')+`</tr>`;
+  for(const c of LOWER)h+=`<tr><td>${c.name}<span class="desc">${c.desc}</span></td>${ids.map(i=>cellHtml(i,c)).join('')}</tr>`;
+  h+=`<tr class="total"><td>총점</td>`+ids.map(i=>`<td class="p${hc(i)}">${totalOf(G.players[i].sheet)}</td>`).join('')+`</tr>`;
   t.innerHTML=h;
   $$('#sheet td.pick').forEach(td=>{
     const go=()=>{if(canAct()&&G.rolls<3)doChoose(td.dataset.cat);};
@@ -680,20 +736,35 @@ function renderSheet(){
 function renderOver(){
   const o=$('#gameOver');
   if(!G||!G.finished){o.style.display='none';o.innerHTML='';return;}
-  const my=myIdx(),op=1-my;
-  const ms=totalOf(G.players[my].sheet),os=totalOf(G.players[op].sheet);
+  const my=myIdx();const st=standings();const mine=st.find(s=>s.i===my);
   let title;
-  if(G.mode==='local')title=ms===os?'무승부':`${esc(G.players[ms>os?0:1].name)} 승리`;
-  else title=G.forcedResult==='win'?'상대 기권':(ms>os?'승리':ms<os?'패배':'무승부');
-  o.innerHTML=`<h2>${title}</h2><div class="score">${esc(G.players[0].name)} ${totalOf(G.players[0].sheet)} : ${totalOf(G.players[1].sheet)} ${esc(G.players[1].name)}</div><div class="row"></div>`;
+  if(G.mode==='local'){const top=st.filter(s=>s.rank===1);title=top.length>1?'무승부':`${esc(top[0].name)} 승리`;}
+  else if(G.forcedResult==='win')title='상대 기권';
+  else if(!mine)title='게임 종료';
+  else title=mine.rank===1?(st.filter(s=>s.rank===1).length>1?'무승부':'승리'):'패배';
+  const lines=st.map(s=>`<div>${s.rank}위 ${esc(s.name)} ${s.score}점</div>`).join('');
+  o.innerHTML=`<h2>${title}</h2><div class="score">${lines}</div><div class="row"></div>`;
   const row=$('.row',o);
   const again=document.createElement('button');again.className='btn primary';
-  if(G.mode==='online'){again.textContent='나가기';again.onclick=async()=>{await leaveOnline();G=null;render();};}
-  else{again.textContent='다시 하기';again.onclick=()=>{G=null;startGame();};}
-  row.appendChild(again);
+  if(G.mode==='online'){
+    if(online&&online.host===me.id){again.textContent='같은 멤버로 다시 하기';again.onclick=restartRoomGame;row.appendChild(again);}
+    const out=document.createElement('button');out.className='btn'+(online&&online.host===me.id?'':' primary');out.textContent='나가기';out.onclick=async()=>{await leaveOnline();G=null;render();};row.appendChild(out);
+  }else{again.textContent='다시 하기';again.onclick=()=>{G=null;startGame();};row.appendChild(again);}
   const close=document.createElement('button');close.className='btn';close.textContent='판 보기';close.onclick=()=>{o.style.display='none';};
   row.appendChild(close);
   o.style.display='';
+}
+function renderRoom(){
+  const box=$('#roomView');
+  if(!online){box.innerHTML='';return;}
+  if(online.status==='waiting'){box.innerHTML=`<h3>빠른 대전</h3><p class="hint">상대를 기다리는 중입니다.</p>`;return;}
+  const ps=online.room?online.room.players:[];
+  const isHost=online.host===me.id;
+  let h=`<h3>방 (${ps.length} / ${ROOM_MAX}명)</h3><ul class="members">`+ps.map(p=>`<li><span class="dot on"></span><span class="fname">${esc(p.name)}</span>${p.id===online.host?'<span class="frec">방장</span>':''}</li>`).join('')+`</ul>`;
+  h+=`<p class="hint">${ps.length<ROOM_MAX?'친구 목록에서 초대를 눌러 친구를 부를 수 있습니다.':'방이 가득 찼습니다.'}</p>`;
+  h+=`<div class="row" style="margin-top:14px">${isHost?`<button class="btn primary" id="btnRoomStart" ${ps.length<2?'disabled':''}>게임 시작</button>`:'<span class="hint" style="margin:0">방장이 시작하기를 기다리는 중입니다.</span>'}</div>`;
+  box.innerHTML=h;
+  const s=$('#btnRoomStart');if(s)s.onclick=startRoomGame;
 }
 
 /* ===== 전적 ===== */
@@ -714,7 +785,16 @@ async function storeGame(rec){
   }
   const list=LS.get(gameKey(),[]);rec.id=Date.now();list.unshift(rec);LS.set(gameKey(),list.slice(0,300));return rec;
 }
-function modeLabel(r){return r.mode==='ai'?`AI 대전 (${LEVELS[r.level]||''})`:MODES[r.mode]||r.mode;}
+function modeLabel(r){
+  const n=r.log&&r.log.players?r.log.players.length:2;
+  if(r.mode==='ai')return `AI 대전 (${LEVELS[r.level]||''}${n>2?`, ${n}인`:''})`;
+  if(r.mode==='local')return `같은 기기 (${n}인)`;
+  return `온라인 대전${n>2?` (${n}인)`:''}`;
+}
+function resultLabel(r){
+  const n=r.log&&r.log.n;const rk=r.log&&r.log.rank;
+  return `${RESULTS[r.result]||r.result}${n>2&&rk?` (${rk}위 / ${n}명)`:''}`;
+}
 function renderRecords(){
   $$('#recFilter button').forEach(b=>b.classList.toggle('on',b.dataset.v===recFilter));
   const player=myGames.filter(g=>g.mode!=='ai');
@@ -728,15 +808,14 @@ function renderRecords(){
   const t=$('#recTable');
   if(!list.length){t.innerHTML=`<tr><td class="empty">아직 기록이 없습니다.</td></tr>`;return;}
   t.innerHTML=`<thead><tr><th>날짜</th><th>모드</th><th>상대</th><th>결과</th><th>점수</th></tr></thead><tbody>`+
-    list.map((g,i)=>`<tr data-i="${i}"><td>${fmtDate(g.created_at)}</td><td>${modeLabel(g)}</td><td>${esc(g.opponent)}</td><td class="${g.result}">${RESULTS[g.result]||g.result}</td><td>${g.my_score} : ${g.opp_score}</td></tr>`).join('')+`</tbody>`;
+    list.map((g,i)=>`<tr data-i="${i}"><td>${fmtDate(g.created_at)}</td><td>${modeLabel(g)}</td><td>${esc(g.opponent)}</td><td class="${g.result}">${resultLabel(g)}</td><td>${g.my_score} : ${g.opp_score}</td></tr>`).join('')+`</tbody>`;
   $$('#recTable tbody tr').forEach(tr=>tr.onclick=()=>openReplay(list[+tr.dataset.i]));
 }
-
 function renderBest(){
   const box=$('#recBest');
   if(!myGames.length){box.style.display='none';return;}
   box.style.display='';
-  const groups=[{key:'all',label:'전체',f:()=>true},{key:'ai:easy',label:'AI 대전 (쉬움)',f:g=>g.mode==='ai'&&g.level==='easy'},{key:'ai:normal',label:'AI 대전 (보통)',f:g=>g.mode==='ai'&&g.level==='normal'},{key:'ai:hard',label:'AI 대전 (어려움)',f:g=>g.mode==='ai'&&g.level==='hard'},{key:'local',label:'2인 대전',f:g=>g.mode==='local'},{key:'online',label:'온라인 대전',f:g=>g.mode==='online'}];
+  const groups=[{key:'all',label:'전체',f:()=>true},{key:'ai:easy',label:'AI 대전 (쉬움)',f:g=>g.mode==='ai'&&g.level==='easy'},{key:'ai:normal',label:'AI 대전 (보통)',f:g=>g.mode==='ai'&&g.level==='normal'},{key:'ai:hard',label:'AI 대전 (어려움)',f:g=>g.mode==='ai'&&g.level==='hard'},{key:'local',label:'같은 기기 대전',f:g=>g.mode==='local'},{key:'online',label:'온라인 대전',f:g=>g.mode==='online'}];
   const rows=[];
   for(const gr of groups){
     const gs=myGames.filter(gr.f);if(!gs.length)continue;
@@ -744,46 +823,46 @@ function renderBest(){
     rows.push({label:gr.label,g:best,n:gs.length});
   }
   box.innerHTML=`<h3>최고 기록</h3><table><thead><tr><th>구분</th><th>점수</th><th>날짜</th><th>상대</th><th>결과</th><th>판 수</th></tr></thead><tbody>`+
-    rows.map((r,i)=>`<tr data-i="${i}"><td>${r.label}</td><td class="n">${r.g.my_score}</td><td>${fmtDate(r.g.created_at)}</td><td>${esc(r.g.opponent)}</td><td class="${r.g.result}">${RESULTS[r.g.result]||''} ${r.g.my_score} : ${r.g.opp_score}</td><td>${r.n}</td></tr>`).join('')+`</tbody></table>`;
+    rows.map((r,i)=>`<tr data-i="${i}"><td>${r.label}</td><td class="n">${r.g.my_score}</td><td>${fmtDate(r.g.created_at)}</td><td>${esc(r.g.opponent)}</td><td class="${r.g.result}">${resultLabel(r.g)} ${r.g.my_score} : ${r.g.opp_score}</td><td>${r.n}</td></tr>`).join('')+`</tbody></table>`;
   $$('#recBest tbody tr').forEach(tr=>tr.onclick=()=>openReplay(rows[+tr.dataset.i].g));
 }
 
 /* ===== 돌려보기 (분석) ===== */
+function turnRound(turns,i){let r=1;for(let k=0;k<i;k++)if(turns[k].p===turns[i].p)r++;return r;}
 function openReplay(rec){
   replayRec=rec;replayIdx=0;
-  const lg=rec.log||{turns:[]};
-  $('#rpTitle').textContent=`${fmtDate(rec.created_at)}  ${modeLabel(rec)}  ${rec.opponent} 상대  ${RESULTS[rec.result]||''} ${rec.my_score} : ${rec.opp_score}`;
+  const lg=rec.log||{turns:[],players:[]};
+  $('#rpTitle').textContent=`${fmtDate(rec.created_at)}  ${modeLabel(rec)}  ${rec.opponent} 상대  ${resultLabel(rec)} ${rec.my_score} : ${rec.opp_score}`;
   const ol=$('#rpTurns');ol.innerHTML='';
   (lg.turns||[]).forEach((t,i)=>{
     const li=document.createElement('li');
-    li.innerHTML=`<span>라운드 ${Math.floor(i/2)+1}</span><span>${esc(lg.players[t.p].name)}</span><span>${CAT[t.cat].name}에 ${t.score}점</span>`;
+    li.innerHTML=`<span>라운드 ${turnRound(lg.turns,i)}</span><span>${esc(lg.players[t.p].name)}</span><span>${CAT[t.cat].name}에 ${t.score}점</span>`;
     li.onclick=()=>{replayIdx=i;renderReplay();};ol.appendChild(li);
   });
   page('replay');renderReplay();
 }
 function renderReplay(){
-  const lg=replayRec.log||{turns:[],players:[]},turns=lg.turns||[];
+  const lg=replayRec.log||{turns:[],players:[]},turns=lg.turns||[],n=lg.players.length||2;
   $$('#rpTurns li').forEach((li,i)=>{li.classList.toggle('on',i===replayIdx);if(i===replayIdx)li.scrollIntoView({block:'nearest'});});
   const box=$('#rpDetail');
   if(!turns.length){box.innerHTML='<p class="empty">이 기록에는 돌려볼 수 있는 내용이 없습니다.</p>';return;}
-  const sheets=[emptySheet(),emptySheet()];
+  const sheets=lg.players.map(()=>emptySheet());
   for(let i=0;i<replayIdx;i++)sheets[turns[i].p][turns[i].cat]=turns[i].score;
   const t=turns[replayIdx],before=JSON.parse(JSON.stringify(sheets[t.p]));
   sheets[t.p][t.cat]=t.score;
   const rec=recommend(t.dice,before);
-  const est=[0,1].map(i=>estimateFinal(sheets[i]));
-  const names=lg.players.map(p=>p.name);
-  let h=`<h4>라운드 ${Math.floor(replayIdx/2)+1}, ${esc(names[t.p])}</h4><div class="rp-rolls" id="rpRolls"></div>`;
+  const names=lg.players.map(p=>p.name),ids=lg.players.map((p,i)=>i),w=colW(n);
+  let h=`<h4>라운드 ${turnRound(turns,replayIdx)}, ${esc(names[t.p])}</h4><div class="rp-rolls" id="rpRolls"></div>`;
   h+=`<p class="rp-line">선택: <b>${CAT[t.cat].name}</b>에 ${t.score}점</p>`;
   if(rec)h+=`<p class="rp-line">추천: <b>${CAT[rec].name}</b>에 ${scoreCat(rec,t.dice)}점${rec===t.cat?' (선택과 같습니다)':''}</p>`;
-  h+=`<p class="rp-line">이 턴 이후 예상 최종 점수: ${esc(names[0])} ${est[0]}, ${esc(names[1])} ${est[1]}</p>`;
+  h+=`<p class="rp-line">이 턴 이후 예상 최종 점수: ${ids.map(i=>`${esc(names[i])} ${estimateFinal(sheets[i])}`).join(', ')}</p>`;
   h+=`<div class="rp-nav"><button class="btn sm" id="rpPrev">이전 턴</button><button class="btn sm" id="rpNext">다음 턴</button></div>`;
-  h+=`<table class="sheet"><tr><th></th><th class="p">${esc(names[0])}</th><th class="p">${esc(names[1])}</th></tr>`;
+  h+=`<table class="sheet"><tr><th></th>${ids.map(i=>`<th class="p" style="width:${w}">${esc(names[i])}</th>`).join('')}</tr>`;
   const cell=(i,c)=>{const v=sheets[i][c.id];const cls=v==null?'':((i===t.p&&c.id===t.cat)?' last':' filled');return `<td class="p${cls}${v===0?' zero':''}">${v==null?'':v}</td>`;};
-  for(const c of UPPER)h+=`<tr><td>${c.name}</td>${cell(0,c)}${cell(1,c)}</tr>`;
-  h+=`<tr class="bonus"><td>보너스</td>`+[0,1].map(i=>{const u=upperSum(sheets[i]);return `<td class="p">${u} / 63${u>=63?' (+35)':''}</td>`;}).join('')+`</tr>`;
-  for(const c of LOWER)h+=`<tr><td>${c.name}</td>${cell(0,c)}${cell(1,c)}</tr>`;
-  h+=`<tr class="total"><td>총점</td><td class="p">${totalOf(sheets[0])}</td><td class="p">${totalOf(sheets[1])}</td></tr></table>`;
+  for(const c of UPPER)h+=`<tr><td>${c.name}</td>${ids.map(i=>cell(i,c)).join('')}</tr>`;
+  h+=`<tr class="bonus"><td>보너스</td>`+ids.map(i=>{const u=upperSum(sheets[i]);return `<td class="p">${u} / 63${u>=63?' (+35)':''}</td>`;}).join('')+`</tr>`;
+  for(const c of LOWER)h+=`<tr><td>${c.name}</td>${ids.map(i=>cell(i,c)).join('')}</tr>`;
+  h+=`<tr class="total"><td>총점</td>${ids.map(i=>`<td class="p">${totalOf(sheets[i])}</td>`).join('')}</tr></table>`;
   box.innerHTML=h;
   const rolls=$('#rpRolls');
   (t.rolls||[]).forEach((d,k)=>{
@@ -816,9 +895,13 @@ async function loadFriends(){
   renderFriends();
 }
 function h2h(fid){
-  const gs=myGames.filter(g=>g.mode==='online'&&g.opponent_id===fid);
-  const w=gs.filter(g=>g.result==='win').length,l=gs.filter(g=>g.result==='loss').length;
-  return gs.length?`${w}승 ${l}패`:'전적 없음';
+  let w=0,l=0,n=0;
+  for(const g of myGames){
+    if(g.mode!=='online')continue;
+    const o=(g.log&&g.log.others)?g.log.others.find(x=>x.id===fid):(g.opponent_id===fid?{score:g.opp_score}:null);
+    if(!o)continue;n++;if(g.my_score>o.score)w++;else if(g.my_score<o.score)l++;
+  }
+  return n?`${w}승 ${l}패`:'전적 없음';
 }
 function renderFriends(){
   const ul=$('#friendList'),rq=$('#friendReqs');ul.innerHTML='';rq.innerHTML='';
@@ -840,12 +923,20 @@ function renderFriends(){
     d.appendChild(x);rq.appendChild(d);
   });
   if(!friends.length){const li=document.createElement('li');li.className='empty';li.style.padding='16px 0';li.style.borderTop='0';li.textContent='닉네임으로 친구를 추가해 보세요.';ul.appendChild(li);return;}
-  const busy=!!online;
+  const inRoom=online&&online.status==='room';
+  const roomIds=inRoom&&online.room?online.room.players.map(p=>p.id):[];
+  const canInvite=!online||inRoom;
+  const roomFull=inRoom&&roomIds.length>=ROOM_MAX;
   friends.forEach(f=>{
     const on=onlineIds.has(f.fid);
     const li=document.createElement('li');
     li.innerHTML=`<span class="dot${on?' on':''}"></span><span class="fname">${esc(f.nick)}</span><span class="frec">${h2h(f.fid)}</span>`;
-    if(on){const b=document.createElement('button');b.className='btn sm';b.textContent='대전 신청';b.disabled=busy;b.onclick=()=>inviteFriend(f);li.appendChild(b);}
+    if(on){
+      const b=document.createElement('button');b.className='btn sm';
+      if(roomIds.includes(f.fid)){b.textContent='참가 중';b.disabled=true;}
+      else{b.textContent='초대';b.disabled=!canInvite||roomFull;b.onclick=()=>inviteFriend(f);}
+      li.appendChild(b);
+    }
     const x=document.createElement('button');x.className='x';x.textContent='×';x.title='친구 삭제';x.onclick=()=>showModal(`${f.nick} 님을 친구에서 삭제할까요?`,[{label:'삭제',fn:()=>removeFriendship(f.id)},{label:'취소'}]);
     li.appendChild(x);ul.appendChild(li);
   });
@@ -877,27 +968,36 @@ function startPresence(){
     .subscribe(async s=>{if(s==='SUBSCRIBED')await presenceCh.track({at:Date.now()});});
 }
 function subscribeRealtime(){
-  matchCh=sb.channel('yd-match-'+me.id)
-    .on('postgres_changes',{event:'*',schema:'public',table:'yd_matches',filter:'host=eq.'+me.id},onMatchEvent)
-    .on('postgres_changes',{event:'*',schema:'public',table:'yd_matches',filter:'guest=eq.'+me.id},onMatchEvent)
+  inviteCh=sb.channel('yd-invites-'+me.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'yd_invites',filter:'to_id=eq.'+me.id},p=>{if(p.new&&p.new.status==='pending')showInvite(p.new);})
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'yd_invites',filter:'to_id=eq.'+me.id},p=>{if(p.new&&p.new.status==='cancelled'&&pendingInvite&&pendingInvite.id===p.new.id){pendingInvite=null;closeModal();}})
     .subscribe();
   friendCh=sb.channel('yd-friends-'+me.id)
     .on('postgres_changes',{event:'*',schema:'public',table:'yd_friendships',filter:'requester=eq.'+me.id},()=>loadFriends())
     .on('postgres_changes',{event:'*',schema:'public',table:'yd_friendships',filter:'addressee=eq.'+me.id},()=>loadFriends())
     .subscribe();
 }
+function subscribeRoom(id){
+  unsubscribeRoom();
+  roomCh=sb.channel('yd-room-'+id)
+    .on('postgres_changes',{event:'*',schema:'public',table:'yd_matches',filter:'id=eq.'+id},onRoomEvent)
+    .subscribe();
+}
+function unsubscribeRoom(){if(roomCh){sb.removeChannel(roomCh);roomCh=null;}}
 function stopRealtime(){
   if(!sb)return;
-  [presenceCh,matchCh,friendCh].forEach(c=>{if(c)sb.removeChannel(c);});
-  presenceCh=matchCh=friendCh=null;onlineIds=new Set();
+  [presenceCh,inviteCh,friendCh,roomCh].forEach(c=>{if(c)sb.removeChannel(c);});
+  presenceCh=inviteCh=friendCh=roomCh=null;onlineIds=new Set();
 }
 
-/* ===== 온라인 대전 ===== */
+/* ===== 온라인: 방 · 초대 · 빠른 대전 ===== */
+let pendingInvite=null;
 function stateForSync(){const {saved,forcedResult,...st}=G;return st;}
 function sync(){
-  if(!G||G.mode!=='online'||!online||!CLOUD)return;
-  sb.from('yd_matches').update({state:stateForSync(),status:G.finished?'finished':'active',updated_at:new Date().toISOString()}).eq('id',online.matchId)
+  if(!G||G.mode!=='online'||!online||!CLOUD)return sync.p=Promise.resolve();
+  sync.p=sb.from('yd_matches').update({state:stateForSync(),status:G.finished?'finished':'active',updated_at:new Date().toISOString()}).eq('id',online.matchId)
     .then(({error})=>{if(error)console.warn(error);});
+  return sync.p;
 }
 function applyState(st){
   const saved=G&&G.saved;
@@ -906,79 +1006,134 @@ function applyState(st){
   if(G.finished)saveResult();
 }
 function startOnlineGame(row){
-  online.status='active';
+  online.status='active';online.host=row.host;
   G=row.state;G.saved=false;
   settings.mode='online';
   closeModal();page('play');render();
 }
-function onMatchEvent(p){
-  const row=p.new;if(!row||!row.id)return;
-  if(online&&row.id===online.matchId){
-    if(row.status==='active'){
-      if(online.status!=='active'||!G)startOnlineGame(row);
-      else if(row.state&&row.state.seq>G.seq)applyState(row.state);
-    }else if(row.status==='finished'){
-      if(G&&row.state&&row.state.seq>G.seq)applyState(row.state);
-    }else if(row.status==='declined'){
-      online=null;renderSettings();renderFriends();showModal('상대가 대전 신청을 거절했습니다.');
-    }else if(row.status==='abandoned'){
-      if(G&&!G.finished){G.finished=true;G.forcedResult='win';render();saveResult('win');showModal('상대가 나갔습니다. 기권승으로 기록됩니다.');}
-    }
+function onRoomEvent(p){
+  if(!online)return;
+  const row=p.new;
+  if(p.eventType==='DELETE'||!row||!row.id){
+    if(online.status==='room'||online.status==='waiting'){const wasHost=online.host===me.id;clearOnline();render();if(!wasHost)showModal('방이 닫혔습니다.');}
     return;
   }
-  if(row.status==='invited'&&row.guest===me.id&&p.eventType==='INSERT')showInvite(row);
-  if(row.status==='cancelled'&&row.guest===me.id)closeModal();
+  if(row.id!==online.matchId)return;
+  if(row.status==='room'){
+    online.room=row.state;online.host=row.host;
+    if(!row.state.players.some(x=>x.id===me.id)){clearOnline();render();showModal('방에서 나가게 되었습니다.');return;}
+    render();renderFriends();return;
+  }
+  if(row.status==='closed'){const wasHost=online.host===me.id;clearOnline();render();if(!wasHost)showModal('방장이 방을 닫았습니다.');return;}
+  if(row.status==='active'||row.status==='finished'){
+    if(!row.state)return;
+    if(online.status!=='active'||!G||G.mode!=='online'||row.state.gameNo!==G.gameNo){
+      if(!row.state.players.some(x=>x.id===me.id)){clearOnline();render();return;}
+      startOnlineGame(row);
+    }else if(row.state.seq>G.seq)applyState(row.state);
+  }
+}
+function clearOnline(){online=null;unsubscribeRoom();renderSettings();renderFriends();}
+
+async function createRoom(){
+  if(!CLOUD||me.guest||online)return;
+  if(G&&!G.finished){return showModal('진행 중인 게임을 그만두고 방을 만들까요?',[{label:'방 만들기',fn:()=>{G=null;render();createRoom();}},{label:'취소'}]);}
+  G=null;
+  const st={mode:'online',players:[{id:me.id,name:me.nick,kind:'human'}]};
+  const {data,error}=await sb.from('yd_matches').insert({host:me.id,host_name:me.nick,status:'room',state:st}).select().single();
+  if(error)return showModal('방을 만들지 못했습니다. '+error.message);
+  online={matchId:data.id,status:'room',host:me.id,room:data.state};
+  subscribeRoom(data.id);render();renderFriends();
 }
 async function inviteFriend(f){
-  if(online)return showModal('이미 진행 중인 온라인 대전이 있습니다.');
-  if(G&&!G.finished&&G.mode!=='online'){return showModal('진행 중인 게임을 그만두고 대전을 신청할까요?',[{label:'신청',fn:()=>{G=null;render();inviteFriend(f);}},{label:'취소'}]);}
-  const st=makeState('online',[{id:me.id,name:me.nick,kind:'human'},{id:f.fid,name:f.nick,kind:'human'}]);
-  const {data,error}=await sb.from('yd_matches').insert({host:me.id,host_name:me.nick,guest:f.fid,guest_name:f.nick,status:'invited',state:st}).select().single();
-  if(error)return showModal('대전 신청을 보내지 못했습니다. '+error.message);
-  online={matchId:data.id,myIdx:0,status:'invited'};renderSettings();renderFriends();
-  showModal(`${f.nick} 님의 수락을 기다리는 중입니다.`,[{label:'취소',fn:cancelOnline}]);
+  if(!online){await createRoom();if(!online)return;}
+  if(online.status!=='room')return;
+  if(online.room.players.length>=ROOM_MAX)return showModal('방이 가득 찼습니다.');
+  const {error}=await sb.from('yd_invites').insert({room_id:online.matchId,from_id:me.id,from_name:me.nick,to_id:f.fid});
+  if(error)return showModal('초대를 보내지 못했습니다. '+error.message);
+  friendMsg(`${f.nick} 님을 초대했습니다.`);
 }
-function showInvite(row){
-  showModal(`${row.host_name} 님이 대전을 신청했습니다.`,[{label:'수락',fn:()=>acceptInvite(row)},{label:'거절',fn:()=>declineInvite(row)}]);
+function showInvite(inv){
+  pendingInvite=inv;
+  showModal(`${inv.from_name} 님이 방에 초대했습니다.`,[{label:'참가',fn:()=>acceptInvite(inv)},{label:'거절',fn:()=>{pendingInvite=null;sb.from('yd_invites').update({status:'declined'}).eq('id',inv.id).then(()=>{});}}]);
 }
-async function acceptInvite(row){
-  if(online)await cancelOnline();
-  if(G&&!G.finished&&G.mode!=='online'){G=null;render();}
-  online={matchId:row.id,myIdx:1,status:'invited'};
-  const {data}=await sb.from('yd_matches').update({status:'active'}).eq('id',row.id).eq('status','invited').select();
-  if(!data||!data.length){online=null;renderSettings();showModal('이 대전 신청은 더 이상 유효하지 않습니다.');return;}
+async function acceptInvite(inv){
+  pendingInvite=null;
+  if(online&&online.status==='active'&&G&&!G.finished){return showModal('진행 중인 온라인 대전이 있습니다. 먼저 나간 뒤 참가할 수 있습니다.');}
+  if(online)await leaveOnline();
+  G=null;
+  await sb.from('yd_invites').update({status:'accepted'}).eq('id',inv.id);
+  await joinRoom(inv.room_id);
+}
+async function joinRoom(roomId){
+  for(let tries=0;tries<3;tries++){
+    const {data:row}=await sb.from('yd_matches').select('*').eq('id',roomId).maybeSingle();
+    if(!row||row.status!=='room')return showModal('방이 닫혔거나 이미 시작했습니다.');
+    const ps=row.state.players||[];
+    if(ps.some(p=>p.id===me.id)){online={matchId:row.id,status:'room',host:row.host,room:row.state};subscribeRoom(row.id);render();renderFriends();return;}
+    if(ps.length>=ROOM_MAX)return showModal('방이 가득 찼습니다.');
+    const st={...row.state,players:[...ps,{id:me.id,name:me.nick,kind:'human'}]};
+    const {data:upd}=await sb.from('yd_matches').update({state:st,updated_at:new Date().toISOString()}).eq('id',roomId).eq('status','room').eq('updated_at',row.updated_at).select();
+    if(upd&&upd.length){online={matchId:row.id,status:'room',host:row.host,room:upd[0].state};subscribeRoom(row.id);page('play');render();renderFriends();return;}
+  }
+  showModal('방에 참가하지 못했습니다. 다시 시도해 주세요.');
+}
+async function startRoomGame(){
+  if(!online||online.status!=='room'||online.host!==me.id)return;
+  const ps=online.room.players;if(ps.length<2)return;
+  const st=makeState('online',ps.map(p=>({id:p.id,name:p.name,kind:'human'})),null,1);
+  const {data,error}=await sb.from('yd_matches').update({status:'active',state:st,updated_at:new Date().toISOString()}).eq('id',online.matchId).eq('status','room').select();
+  if(error||!data||!data.length)return showModal('게임을 시작하지 못했습니다.');
   if(online&&online.status!=='active')startOnlineGame(data[0]);
 }
-async function declineInvite(row){await sb.from('yd_matches').update({status:'declined'}).eq('id',row.id).eq('status','invited');}
+async function restartRoomGame(){
+  if(!online||online.host!==me.id||!G)return;
+  const ps=G.players.filter(p=>!p.left);
+  if(ps.length<2)return showModal('남은 사람이 2명 미만이라 다시 시작할 수 없습니다.');
+  const st=makeState('online',ps.map(p=>({id:p.id,name:p.name,kind:'human'})),null,(G.gameNo||1)+1);
+  const {data}=await sb.from('yd_matches').update({status:'active',state:st,updated_at:new Date().toISOString()}).eq('id',online.matchId).select();
+  if(data&&data.length)startOnlineGame(data[0]);
+}
 async function quickMatch(){
   if(!CLOUD||me.guest||online)return;
   if(G&&!G.finished){return showModal('진행 중인 게임을 그만두고 빠른 대전을 시작할까요?',[{label:'시작',fn:()=>{G=null;render();quickMatch();}},{label:'취소'}]);}
+  G=null;
   const {data:rows}=await sb.from('yd_matches').select('*').eq('status','waiting').neq('host',me.id).order('created_at').limit(5);
   for(const r of rows||[]){
-    const st=r.state;st.players[1]={id:me.id,name:me.nick,kind:'human',sheet:emptySheet()};
-    online={matchId:r.id,myIdx:1,status:'waiting'};
-    const {data:upd}=await sb.from('yd_matches').update({guest:me.id,guest_name:me.nick,status:'active',state:st}).eq('id',r.id).is('guest',null).select();
-    if(upd&&upd.length){if(online&&online.status!=='active')startOnlineGame(upd[0]);return;}
-    online=null;
+    const st=makeState('online',[{id:r.host,name:r.host_name,kind:'human'},{id:me.id,name:me.nick,kind:'human'}],null,1);
+    const {data:upd}=await sb.from('yd_matches').update({guest:me.id,guest_name:me.nick,status:'active',state:st,updated_at:new Date().toISOString()}).eq('id',r.id).is('guest',null).eq('status','waiting').select();
+    if(upd&&upd.length){online={matchId:r.id,status:'waiting',host:r.host};subscribeRoom(r.id);startOnlineGame(upd[0]);return;}
   }
-  const st=makeState('online',[{id:me.id,name:me.nick,kind:'human'},{id:null,name:'상대',kind:'human'}]);
-  const {data,error}=await sb.from('yd_matches').insert({host:me.id,host_name:me.nick,status:'waiting',state:st}).select().single();
+  const {data,error}=await sb.from('yd_matches').insert({host:me.id,host_name:me.nick,status:'waiting',state:{mode:'online',players:[{id:me.id,name:me.nick,kind:'human'}]}}).select().single();
   if(error)return showModal('빠른 대전을 시작하지 못했습니다. '+error.message);
-  online={matchId:data.id,myIdx:0,status:'waiting'};renderSettings();renderFriends();
-  showModal('상대를 기다리는 중입니다.',[{label:'취소',fn:cancelOnline}]);
+  online={matchId:data.id,status:'waiting',host:me.id};
+  subscribeRoom(data.id);render();renderFriends();
 }
-async function cancelOnline(){
-  if(!online)return;
-  const {matchId,status}=online;online=null;renderSettings();renderFriends();closeModal();
-  if(status==='waiting')await sb.from('yd_matches').delete().eq('id',matchId).eq('status','waiting');
-  else if(status==='invited'){await sb.from('yd_matches').update({status:'cancelled'}).eq('id',matchId).eq('status','invited');await sb.from('yd_matches').delete().eq('id',matchId);}
-}
+/* 방·대전에서 나가기 */
 async function leaveOnline(){
   if(!online)return;
-  const {matchId,status}=online;
-  if(status!=='active')return cancelOnline();
-  online=null;renderSettings();renderFriends();
-  if(G&&G.mode==='online'&&!G.finished)await sb.from('yd_matches').update({status:'abandoned'}).eq('id',matchId);
+  const {matchId,status,host}=online;
+  if(status==='waiting'){clearOnline();await sb.from('yd_matches').delete().eq('id',matchId).eq('status','waiting');return;}
+  if(status==='room'){
+    clearOnline();
+    if(host===me.id){await sb.from('yd_matches').update({status:'closed'}).eq('id',matchId);await sb.from('yd_invites').update({status:'cancelled'}).eq('room_id',matchId).eq('status','pending');}
+    else{
+      const {data:row}=await sb.from('yd_matches').select('*').eq('id',matchId).maybeSingle();
+      if(row&&row.status==='room'){const st={...row.state,players:row.state.players.filter(p=>p.id!==me.id)};await sb.from('yd_matches').update({state:st,updated_at:new Date().toISOString()}).eq('id',matchId);}
+    }
+    return;
+  }
+  // 진행 중이거나 끝난 게임
+  if(G&&G.mode==='online'){
+    const my=myIdx();
+    if(!G.finished){
+      G.players[my].left=true;
+      if(G.cur===my){resetTurn();if(!advance())G.finished=true;}
+      G.seq++;
+    }else{G.players[my].left=true;G.seq++;}
+    await sync();
+  }
+  clearOnline();
 }
 
 /* ===== 초기화 ===== */
@@ -1001,22 +1156,24 @@ function bind(){
     finally{$('#authSubmit').disabled=false;}
   };
   $('#btnLogout').onclick=()=>{
-    if(G&&!G.finished)showModal('진행 중인 게임이 있습니다. 로그아웃할까요?',[{label:'로그아웃',fn:logout},{label:'취소'}]);
+    if((G&&!G.finished)||online)showModal('진행 중인 게임이나 방이 있습니다. 로그아웃할까요?',[{label:'로그아웃',fn:logout},{label:'취소'}]);
     else logout();
   };
   $$('.nav a').forEach(a=>a.onclick=()=>page(a.dataset.page));
   $$('#modeSeg button').forEach(b=>b.onclick=()=>{settings.mode=b.dataset.v;renderSettings();});
   $$('#levelSeg button').forEach(b=>b.onclick=()=>{settings.level=b.dataset.v;renderSettings();});
+  $$('#countSeg button').forEach(b=>b.onclick=()=>{settings.count=+b.dataset.v;renderSettings();});
   $('#btnStart').onclick=startGame;
   $('#btnQuit').onclick=quitGame;
   $('#btnQuick').onclick=quickMatch;
+  $('#btnRoom').onclick=createRoom;
   $('#btnRoll').onclick=()=>{if(canAct()&&G.rolls>0)doRoll();};
   $('#btnAddFriend').onclick=addFriend;
   $('#friendInput').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addFriend();}};
   $$('#recFilter button').forEach(b=>b.onclick=()=>{recFilter=b.dataset.v;renderRecords();});
   $('#btnBackRecords').onclick=()=>page('records');
-  $('#modalBg').onclick=e=>{if(e.target.id==='modalBg'&&!(online&&online.status!=='active'))closeModal();};
-  window.addEventListener('beforeunload',()=>{if(online&&online.status==='active'&&G&&!G.finished)sb.from('yd_matches').update({status:'abandoned'}).eq('id',online.matchId).then(()=>{});});
+  $('#modalBg').onclick=e=>{if(e.target.id==='modalBg'&&!pendingInvite)closeModal();};
+  window.addEventListener('beforeunload',()=>{if(online&&online.status==='active'&&G&&G.mode==='online'&&!G.finished){const my=myIdx();G.players[my].left=true;if(G.cur===my){resetTurn();if(!advance())G.finished=true;}G.seq++;sync();}});
 }
 async function init(){
   buildStatic();bind();render();
